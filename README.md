@@ -50,9 +50,10 @@ claude
 
 > **Tip:** Workflows auto-continue at checkpoints by default (`AUTO_PROCEED=true`). To pause and review before each major step (e.g., before committing GPU time), override in your command:
 > ```
-> /research-pipeline "your topic" — AUTO_PROCEED: false
-> /research-pipeline "your topic" — arxiv download: true          # download top arXiv PDFs during literature survey
-> /research-pipeline "your topic" — AUTO_PROCEED: false, arxiv download: true   # combine both
+> /research-pipeline "your topic" — AUTO_PROCEED: false                          # pause at idea selection gate
+> /research-pipeline "your topic" — human checkpoint: true                       # pause after each review round to give feedback
+> /research-pipeline "your topic" — arxiv download: true                         # download top arXiv PDFs during literature survey
+> /research-pipeline "your topic" — AUTO_PROCEED: false, human checkpoint: true  # combine options
 > ```
 
 > **Important:** Codex MCP uses the model from `~/.codex/config.toml`, not from skill files. Make sure it says `model = "gpt-5.4"` (recommended). Other options: `gpt-5.3-codex`, `gpt-5.2-codex`, `o3`. Run `codex setup` or edit the file directly.

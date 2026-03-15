@@ -50,9 +50,10 @@ claude
 
 > **提示：** 工作流默认自动继续（`AUTO_PROCEED=true`）。如果想在每个关键步骤前暂停审核（比如确认 idea 再花 GPU），在命令中覆盖：
 > ```
-> /research-pipeline "你的课题" — AUTO_PROCEED: false
-> /research-pipeline "你的课题" — arxiv download: true          # 文献调研时下载最相关的 arXiv PDF
-> /research-pipeline "你的课题" — AUTO_PROCEED: false, arxiv download: true   # 组合使用
+> /research-pipeline "你的课题" — AUTO_PROCEED: false                          # 在 idea 选择关卡暂停
+> /research-pipeline "你的课题" — human checkpoint: true                       # 每轮 review 后暂停，可给修改意见
+> /research-pipeline "你的课题" — arxiv download: true                         # 文献调研时下载最相关的 arXiv PDF
+> /research-pipeline "你的课题" — AUTO_PROCEED: false, human checkpoint: true  # 组合使用
 > ```
 
 > **重要：** Codex MCP 使用的模型取决于 `~/.codex/config.toml`，而非 skill 文件中的设置。请确认其中写的是 `model = "gpt-5.4"`（推荐）。其他可用模型：`gpt-5.3-codex`、`gpt-5.2-codex`、`o3`。运行 `codex setup` 或直接编辑该文件。
