@@ -48,7 +48,14 @@ claude
 > /research-pipeline "your research direction"  # Full pipeline: Workflow 1 → 2 → 3 end-to-end
 ```
 
-> **Tip:** Workflows auto-continue at checkpoints by default (`AUTO_PROCEED=true`). To pause and review before each major step (e.g., before committing GPU time), override in your command:
+> **Tip:** All pipeline behaviors are configurable via inline overrides — append `— key: value` to any command:
+>
+> | Parameter | Default | What it does |
+> |-----------|---------|-------------|
+> | `AUTO_PROCEED` | `true` | Auto-continue at idea selection gate. Set `false` to manually pick which idea to pursue before committing GPU time |
+> | `human checkpoint` | `false` | Pause after each review round so you can read the score, give custom modification instructions, skip specific fixes, or stop early |
+> | `arxiv download` | `false` | Download top relevant arXiv PDFs during literature survey. When `false`, only fetches metadata (title, abstract, authors) |
+>
 > ```
 > /research-pipeline "your topic" — AUTO_PROCEED: false                          # pause at idea selection gate
 > /research-pipeline "your topic" — human checkpoint: true                       # pause after each review round to give feedback

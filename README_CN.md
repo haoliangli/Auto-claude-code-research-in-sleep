@@ -48,7 +48,14 @@ claude
 > /research-pipeline "你的研究方向"            # 全流程：工作流 1 → 2 → 3 端到端
 ```
 
-> **提示：** 工作流默认自动继续（`AUTO_PROCEED=true`）。如果想在每个关键步骤前暂停审核（比如确认 idea 再花 GPU），在命令中覆盖：
+> **提示：** 所有流水线行为均可通过内联参数配置——在命令后追加 `— key: value`：
+>
+> | 参数 | 默认 | 说明 |
+> |------|------|------|
+> | `AUTO_PROCEED` | `true` | 在 idea 选择关卡自动继续。设为 `false` 可在花 GPU 前手动挑选 idea |
+> | `human checkpoint` | `false` | 每轮 review 后暂停，让你查看分数、给出修改意见、跳过特定修复或提前终止 |
+> | `arxiv download` | `false` | 文献调研时下载最相关的 arXiv PDF。为 `false` 时仅获取元数据（标题、摘要、作者） |
+>
 > ```
 > /research-pipeline "你的课题" — AUTO_PROCEED: false                          # 在 idea 选择关卡暂停
 > /research-pipeline "你的课题" — human checkpoint: true                       # 每轮 review 后暂停，可给修改意见
