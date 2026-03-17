@@ -12,7 +12,7 @@
 >
 > 🪶 **极致轻量——零依赖，零锁定。** 整个系统就是纯 Markdown 文件。没有框架要学、没有数据库要维护、没有 Docker 要配、没有守护进程要看管。每个 skill 就是一个 `SKILL.md`，任何 LLM 都能读懂——换成 [OpenClaw](docs/OPENCLAW_ADAPTATION.md)、Cursor、Windsurf 或者你自己的 agent，工作流照样跑。Fork 它、改写它、适配到你的技术栈。
 >
-> ### *ARIS 是方法论，不是平台。科研工作流才是价值；实现方式故意设计为可替换的。*
+> *ARIS 是方法论，不是平台。重要的是科研工作流——带着它去任何地方。*
 
 [![PaperWeekly 收录](https://img.shields.io/badge/PaperWeekly-收录-red?style=flat)](https://mp.weixin.qq.com/s/tDniVryVGjDkkkWl-5sTkQ) · [![Featured in awesome-agent-skills](https://img.shields.io/badge/Featured%20in-awesome--agent--skills-blue?style=flat&logo=github)](https://github.com/VoltAgent/awesome-agent-skills) · [![AI Digital Crew - Project of the Day](https://img.shields.io/badge/AI%20Digital%20Crew-Project%20of%20the%20Day%20(2026.03.14)-orange?style=flat)](https://aidigitalcrew.com) · [💬 加入交流群](#-交流群) · [![引用](https://img.shields.io/badge/📖_引用-BibTeX-green?style=flat)](#-引用)
 
