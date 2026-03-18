@@ -635,6 +635,17 @@ Add your server info to your project's `CLAUDE.md`:
 
 Claude Code reads this and knows how to SSH in, activate the environment, and launch experiments. GPT-5.4 (the reviewer) only decides **what** experiments to run — Claude Code figures out **how** based on your `CLAUDE.md`.
 
+If you are already on the GPU server, you can add the following to your `CLAUDE.md`:
+```markdown
+## GPU Environment
+
+- This machine has direct GPU access (no SSH needed)
+- GPU: 4x A100 80GB
+- Experiment environment: `YOUR_CONDA_ENV` (Python 3.x + PyTorch)
+- Activate before any Python command: `The command to activate your experiment environment` (uv, conda, etc.)
+- Code directory: `/home/YOUR_USERNAME/YOUR_CODE_DIRECTORY/`
+```
+
 **No server?** The review and rewriting skills still work without GPU access. Only experiment-related fixes will be skipped (flagged for manual follow-up).
 
 </details>
