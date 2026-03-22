@@ -1,8 +1,8 @@
-# Codex + Gemini Critic Guide
+# Codex + Gemini Reviewer Guide
 
-Use **Codex CLI as the executor** and **Gemini as a structured local critic**.
+Use **Codex CLI as the executor** and **Gemini as a structured local reviewer**.
 
-[中文版本](CODEX_GEMINI_CRITIC_GUIDE_CN.md)
+[中文版本](CODEX_GEMINI_REVIEW_GUIDE_CN.md)
 
 This path is useful when you want:
 
@@ -16,17 +16,17 @@ This guide adds a local toolchain alongside ARIS. It does **not** replace `skill
 ## Why This Path
 
 - Codex CLI is a practical low-friction local executor for many users.
-- Gemini is often the easiest external critic to reach through API access, CLI access, or existing student plans.
+- Gemini is often the easiest external reviewer to reach through API access, CLI access, or existing student plans.
 - Pairing the two keeps the executor/reviewer split while lowering both cost and setup friction for ARIS-style workflows.
 
 ## What This Adds
 
 Two local entrypoints:
 
-- `tools/run_gemini_critic.py`
+- `tools/run_gemini_review.py`
   - single structured Gemini review over a git diff + selected files
-- `tools/run_agent_critic_loop.py`
-  - multi-round executor/critic loop
+- `tools/run_agent_review_loop.py`
+  - multi-round executor/reviewer loop
   - each round:
     1. run an executor command
     2. collect the new repo state
@@ -37,7 +37,7 @@ Both tools use only Python standard library plus your local Gemini access.
 
 ## Review Modes
 
-The critic supports three profiles:
+The reviewer supports three profiles:
 
 - `code`
 - `research`
@@ -100,10 +100,10 @@ The runner resolves the Gemini binary in this order:
 
 ## Single Review
 
-Review the current worktree as a strict engineering critic:
+Review the current worktree as a strict engineering reviewer:
 
 ```bash
-python3 tools/run_gemini_critic.py \
+python3 tools/run_gemini_review.py \
   --profile code \
   --task "Review the current changes as a skeptical senior engineer." \
   --git-diff-mode worktree \
@@ -113,7 +113,7 @@ python3 tools/run_gemini_critic.py \
 Review a research update:
 
 ```bash
-python3 tools/run_gemini_critic.py \
+python3 tools/run_gemini_review.py \
   --profile research \
   --task-file /path/to/review_task.md \
   --git-diff-mode base \
@@ -123,7 +123,7 @@ python3 tools/run_gemini_critic.py \
 Default output:
 
 ```text
-outputs/gemini_critic_<timestamp>/
+outputs/gemini_review_<timestamp>/
 ```
 
 Artifacts include:
@@ -134,32 +134,32 @@ Artifacts include:
 - `gemini_stderr.txt`
 - `gemini_cli_payload.json`
 - `response_text.txt`
-- `critic_review.json`
-- `critic_review.md`
+- `review.json`
+- `review.md`
 - `run_metadata.json`
 
-## Multi-Round Executor + Critic Loop
+## Multi-Round Executor + Review Loop
 
 The loop runner is for “implement, then review, then iterate”.
 
 Minimal example:
 
 ```bash
-python3 tools/run_agent_critic_loop.py \
+python3 tools/run_agent_review_loop.py \
   --profile code \
   --task "Fix the highest-priority issues in the current repository." \
   --executor-cmd 'pytest -q || true' \
-  --critic-backend auto \
+  --review-backend auto \
   --max-rounds 3
 ```
 
 Practical Codex-style example:
 
 ```bash
-python3 tools/run_agent_critic_loop.py \
+python3 tools/run_agent_review_loop.py \
   --profile research \
   --task "Address the reviewer-critical issues with the minimum useful repository changes." \
-  --executor-cmd 'printf "%s\n" "Use Codex in this round, then save notes into $AGENT_CRITIC_EXECUTOR_DIR/notes.txt"' \
+  --executor-cmd 'printf "%s\n" "Use Codex in this round, then save notes into $AGENT_REVIEW_EXECUTOR_DIR/notes.txt"' \
   --include-file README.md \
   --max-rounds 2
 ```
@@ -167,13 +167,13 @@ python3 tools/run_agent_critic_loop.py \
 Loop output:
 
 ```text
-outputs/agent_critic_loop_<timestamp>/
+outputs/agent_review_loop_<timestamp>/
 ```
 
 Each round gets:
 
 - `executor/`
-- `critic/`
+- `review/`
 - `round_summary.json`
 
 The loop root also stores:
@@ -186,15 +186,15 @@ The loop root also stores:
 
 During each executor round, the loop exports:
 
-- `AGENT_CRITIC_LOOP_DIR`
-- `AGENT_CRITIC_ROUND_DIR`
-- `AGENT_CRITIC_ROUND_INDEX`
-- `AGENT_CRITIC_EXECUTOR_DIR`
-- `AGENT_CRITIC_CRITIC_DIR`
-- `AGENT_CRITIC_EXECUTOR_TASK_FILE`
-- `AGENT_CRITIC_EXECUTOR_CONTEXT_FILE`
-- `AGENT_CRITIC_PREVIOUS_REVIEW_JSON`
-- `AGENT_CRITIC_PREVIOUS_REVIEW_MD`
+- `AGENT_REVIEW_LOOP_DIR`
+- `AGENT_REVIEW_ROUND_DIR`
+- `AGENT_REVIEW_ROUND_INDEX`
+- `AGENT_REVIEW_EXECUTOR_DIR`
+- `AGENT_REVIEW_DIR`
+- `AGENT_REVIEW_EXECUTOR_TASK_FILE`
+- `AGENT_REVIEW_EXECUTOR_CONTEXT_FILE`
+- `AGENT_REVIEW_PREVIOUS_JSON`
+- `AGENT_REVIEW_PREVIOUS_MD`
 
 This lets your executor command read the previous review and write round-local artifacts without guessing paths.
 
@@ -203,8 +203,8 @@ This lets your executor command read the previous review and write round-local a
 You can validate the flow without calling real Gemini by using a mock JSON file:
 
 ```bash
-python3 tools/run_gemini_critic.py \
-  --task "Smoke test the local critic pipeline." \
+python3 tools/run_gemini_review.py \
+  --task "Smoke test the local review pipeline." \
   --mock-response-file /path/to/mock_review.json
 ```
 
@@ -221,7 +221,7 @@ Choose this guide when you want:
 - Gemini to review locally
 - no Claude API requirement
 - no OpenAI API requirement
-- a lightweight repo-level critic loop outside MCP infrastructure
+- a lightweight repo-level review loop outside MCP infrastructure
 
 Choose [`docs/CODEX_CLAUDE_REVIEW_GUIDE.md`](docs/CODEX_CLAUDE_REVIEW_GUIDE.md) when you specifically want:
 

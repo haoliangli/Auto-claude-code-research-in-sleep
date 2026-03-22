@@ -1,8 +1,8 @@
-# Codex + Gemini 审查指南
+# Codex + Gemini 审稿人指南
 
-使用 **Codex CLI 作为执行者**，使用 **Gemini 作为本地结构化 critic**。
+使用 **Codex CLI 作为执行者**，使用 **Gemini 作为本地结构化审稿人**。
 
-[English version](CODEX_GEMINI_CRITIC_GUIDE.md)
+[English version](CODEX_GEMINI_REVIEW_GUIDE.md)
 
 这条路径适合你在以下场景使用：
 
@@ -16,17 +16,17 @@
 ## 为什么值得加这条路径
 
 - 对很多用户来说，Codex CLI 已经是足够低门槛的本地执行器。
-- Gemini 往往是最容易获取的外部 critic 之一，可以通过 API、CLI，或已有的学生计划来接入。
+- Gemini 往往是最容易获取的外部审稿人接口之一，可以通过 API、CLI，或已有的学生计划来接入。
 - 把两者配对后，依然保留“执行者 / 审查者”分离的优点，同时显著降低 ARIS 工作流的使用成本和接入门槛。
 
 ## 新增了什么
 
 新增两个本地入口：
 
-- `tools/run_gemini_critic.py`
+- `tools/run_gemini_review.py`
   - 对 git diff + 指定文件执行一次结构化 Gemini 审查
-- `tools/run_agent_critic_loop.py`
-  - 多轮执行者 / critic 循环
+- `tools/run_agent_review_loop.py`
+  - 多轮执行者 / 审稿循环
   - 每一轮都会：
     1. 运行执行命令
     2. 收集新的仓库状态
@@ -37,7 +37,7 @@
 
 ## 审查模式
 
-critic 支持三种 profile：
+reviewer 支持三种 profile：
 
 - `code`
 - `research`
@@ -103,7 +103,7 @@ runner 按以下顺序查找 Gemini 可执行文件：
 把当前 worktree 当成工程代码做严格审查：
 
 ```bash
-python3 tools/run_gemini_critic.py \
+python3 tools/run_gemini_review.py \
   --profile code \
   --task "Review the current changes as a skeptical senior engineer." \
   --git-diff-mode worktree \
@@ -113,7 +113,7 @@ python3 tools/run_gemini_critic.py \
 审查一次研究进展：
 
 ```bash
-python3 tools/run_gemini_critic.py \
+python3 tools/run_gemini_review.py \
   --profile research \
   --task-file /path/to/review_task.md \
   --git-diff-mode base \
@@ -123,7 +123,7 @@ python3 tools/run_gemini_critic.py \
 默认输出目录：
 
 ```text
-outputs/gemini_critic_<timestamp>/
+outputs/gemini_review_<timestamp>/
 ```
 
 产物包括：
@@ -134,32 +134,32 @@ outputs/gemini_critic_<timestamp>/
 - `gemini_stderr.txt`
 - `gemini_cli_payload.json`
 - `response_text.txt`
-- `critic_review.json`
-- `critic_review.md`
+- `review.json`
+- `review.md`
 - `run_metadata.json`
 
-## 多轮 Executor + Critic 循环
+## 多轮 Executor + Review 循环
 
 这个 loop runner 适合“实现 -> 审查 -> 再迭代”。
 
 最小示例：
 
 ```bash
-python3 tools/run_agent_critic_loop.py \
+python3 tools/run_agent_review_loop.py \
   --profile code \
   --task "Fix the highest-priority issues in the current repository." \
   --executor-cmd 'pytest -q || true' \
-  --critic-backend auto \
+  --review-backend auto \
   --max-rounds 3
 ```
 
 更接近 Codex 工作方式的示例：
 
 ```bash
-python3 tools/run_agent_critic_loop.py \
+python3 tools/run_agent_review_loop.py \
   --profile research \
   --task "Address the reviewer-critical issues with the minimum useful repository changes." \
-  --executor-cmd 'printf "%s\n" "Use Codex in this round, then save notes into $AGENT_CRITIC_EXECUTOR_DIR/notes.txt"' \
+  --executor-cmd 'printf "%s\n" "Use Codex in this round, then save notes into $AGENT_REVIEW_EXECUTOR_DIR/notes.txt"' \
   --include-file README.md \
   --max-rounds 2
 ```
@@ -167,13 +167,13 @@ python3 tools/run_agent_critic_loop.py \
 loop 输出目录：
 
 ```text
-outputs/agent_critic_loop_<timestamp>/
+outputs/agent_review_loop_<timestamp>/
 ```
 
 每一轮会得到：
 
 - `executor/`
-- `critic/`
+- `review/`
 - `round_summary.json`
 
 loop 根目录还会保存：
@@ -186,15 +186,15 @@ loop 根目录还会保存：
 
 每轮执行时，loop 会导出：
 
-- `AGENT_CRITIC_LOOP_DIR`
-- `AGENT_CRITIC_ROUND_DIR`
-- `AGENT_CRITIC_ROUND_INDEX`
-- `AGENT_CRITIC_EXECUTOR_DIR`
-- `AGENT_CRITIC_CRITIC_DIR`
-- `AGENT_CRITIC_EXECUTOR_TASK_FILE`
-- `AGENT_CRITIC_EXECUTOR_CONTEXT_FILE`
-- `AGENT_CRITIC_PREVIOUS_REVIEW_JSON`
-- `AGENT_CRITIC_PREVIOUS_REVIEW_MD`
+- `AGENT_REVIEW_LOOP_DIR`
+- `AGENT_REVIEW_ROUND_DIR`
+- `AGENT_REVIEW_ROUND_INDEX`
+- `AGENT_REVIEW_EXECUTOR_DIR`
+- `AGENT_REVIEW_DIR`
+- `AGENT_REVIEW_EXECUTOR_TASK_FILE`
+- `AGENT_REVIEW_EXECUTOR_CONTEXT_FILE`
+- `AGENT_REVIEW_PREVIOUS_JSON`
+- `AGENT_REVIEW_PREVIOUS_MD`
 
 这样你的执行命令就可以读取上一轮审查结果，并在当前轮目录下写产物，而不需要硬编码路径。
 
@@ -203,8 +203,8 @@ loop 根目录还会保存：
 如果你想不调用真实 Gemini 先验证整条链路，可以使用 mock JSON：
 
 ```bash
-python3 tools/run_gemini_critic.py \
-  --task "Smoke test the local critic pipeline." \
+python3 tools/run_gemini_review.py \
+  --task "Smoke test the local review pipeline." \
   --mock-response-file /path/to/mock_review.json
 ```
 
@@ -221,7 +221,7 @@ mock 文件可以是以下任一种：
 - Gemini 在本地审查
 - 不依赖 Claude 审稿 API
 - 不依赖 OpenAI 审稿 API
-- 用一个轻量、仓库级别的 critic loop 代替 MCP 基础设施
+- 用一个轻量、仓库级别的 review loop 代替 MCP 基础设施
 
 就选这条路径。
 

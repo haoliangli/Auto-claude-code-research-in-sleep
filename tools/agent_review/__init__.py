@@ -1,4 +1,4 @@
-from .gemini_critic import (
+from .gemini_review import (
     DEFAULT_GEMINI_API_MODEL,
     FileSnippet,
     GeminiApiInvocationError,
@@ -21,7 +21,7 @@ from .gemini_critic import (
     write_json,
     write_text,
 )
-from .review_loop import run_agent_critic_loop
+from .review_loop import run_agent_review_loop
 
 __all__ = [
     "DEFAULT_GEMINI_API_MODEL",
@@ -41,7 +41,7 @@ __all__ = [
     "resolve_gemini_binary",
     "resolve_gemini_model",
     "resolve_repo_root",
-    "run_agent_critic_loop",
+    "run_agent_review_loop",
     "run_gemini_api",
     "run_gemini_cli",
     "write_json",

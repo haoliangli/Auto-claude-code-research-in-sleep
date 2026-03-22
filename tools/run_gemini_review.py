@@ -9,7 +9,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from tools.agent_critic import (  # noqa: E402
+from tools.agent_review import (  # noqa: E402
     DEFAULT_GEMINI_API_MODEL,
     GeminiApiInvocationError,
     PromptInputs,
@@ -37,7 +37,7 @@ def now_stamp() -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run Gemini as a structured external critic for code or research updates."
+        description="Run Gemini as a structured external reviewer for code or research updates."
     )
     parser.add_argument("--profile", choices=["code", "research", "generic"], default="code")
     parser.add_argument("--task", default=None, help="direct review task text")
@@ -86,7 +86,7 @@ def default_task(profile: str) -> str:
         )
     if profile == "generic":
         return (
-            "Review the provided context as a skeptical external critic. "
+            "Review the provided context as a skeptical external reviewer. "
             "Focus on the biggest risks, unsupported assumptions, and the minimum fixes required."
         )
     return (
@@ -117,7 +117,7 @@ def resolve_output_dir(args: argparse.Namespace, cwd: Path, repo_root: Path | No
             output_dir = output_dir.resolve()
     else:
         base = repo_root or cwd
-        output_dir = (base / "outputs" / f"gemini_critic_{now_stamp()}").resolve()
+        output_dir = (base / "outputs" / f"gemini_review_{now_stamp()}").resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
@@ -190,7 +190,7 @@ def main() -> None:
     write_text(output_dir / "prompt.md", prompt)
 
     if args.dry_run:
-        print(f"[gemini-critic] dry run complete: {output_dir}")
+        print(f"[gemini-review] dry run complete: {output_dir}")
         return
 
     mock_response_file = None
@@ -249,16 +249,16 @@ def main() -> None:
             backend=backend,
             error=error_payload,
         )
-        print(f"[gemini-critic] output: {output_dir}", file=sys.stderr)
-        print(f"[gemini-critic] error: {exc}", file=sys.stderr)
+        print(f"[gemini-review] output: {output_dir}", file=sys.stderr)
+        print(f"[gemini-review] error: {exc}", file=sys.stderr)
         raise SystemExit(1)
 
     write_text(output_dir / "gemini_stdout.txt", result.raw_stdout)
     write_text(output_dir / "gemini_stderr.txt", result.raw_stderr)
     write_json(output_dir / "gemini_cli_payload.json", result.cli_payload)
     write_text(output_dir / "response_text.txt", result.response_text)
-    write_json(output_dir / "critic_review.json", result.structured_review)
-    write_text(output_dir / "critic_review.md", render_review_markdown(result.structured_review))
+    write_json(output_dir / "review.json", result.structured_review)
+    write_text(output_dir / "review.md", render_review_markdown(result.structured_review))
     write_run_metadata(
         output_dir=output_dir,
         command=result.command,
@@ -271,9 +271,9 @@ def main() -> None:
     )
 
     issues = result.structured_review.get("critical_issues") or []
-    print(f"[gemini-critic] output: {output_dir}")
+    print(f"[gemini-review] output: {output_dir}")
     print(
-        "[gemini-critic] "
+        "[gemini-review] "
         f"score={result.structured_review.get('score')} "
         f"decision={result.structured_review.get('decision')} "
         f"issues={len(issues)}"

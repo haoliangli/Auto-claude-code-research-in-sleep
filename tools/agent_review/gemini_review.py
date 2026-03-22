@@ -252,7 +252,7 @@ def build_prompt(inputs: PromptInputs) -> str:
     snippet_block = "\n\n".join(snippet_sections) if snippet_sections else "[no file snippets included]"
 
     return (
-        "You are an external critical reviewer.\n\n"
+        "You are an external reviewer.\n\n"
         f"Review profile: {inputs.profile}\n"
         f"Working directory: {inputs.cwd}\n"
         f"Repository root: {inputs.repo_root or '[unknown]'}\n"
@@ -646,7 +646,7 @@ def render_review_markdown(review: dict[str, Any]) -> str:
     actions = review.get("next_actions") or []
 
     lines = [
-        "# Gemini Critic Review",
+        "# Gemini Review",
         "",
         f"- Score: {review.get('score')}",
         f"- Decision: {review.get('decision')}",

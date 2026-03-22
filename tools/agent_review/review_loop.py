@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .gemini_critic import resolve_gemini_binary, resolve_repo_root, write_json, write_text
+from .gemini_review import resolve_gemini_binary, resolve_repo_root, write_json, write_text
 
 
 @dataclass
@@ -49,7 +49,7 @@ def read_task_text(task: str | None, task_file: str | None, *, cwd: Path, profil
         )
     if profile == "generic":
         return (
-            "Review the provided context as a skeptical external critic. "
+            "Review the provided context as a skeptical external reviewer. "
             "Focus on the biggest risks, unsupported assumptions, and the minimum fixes required."
         )
     return (
@@ -64,7 +64,7 @@ def resolve_output_dir(output_dir: str | None, *, cwd: Path, repo_root: Path | N
         resolved = raw.resolve() if raw.is_absolute() else (cwd / raw).resolve()
     else:
         base = repo_root or cwd
-        resolved = (base / "outputs" / f"agent_critic_loop_{now_stamp()}").resolve()
+        resolved = (base / "outputs" / f"agent_review_loop_{now_stamp()}").resolve()
     resolved.mkdir(parents=True, exist_ok=True)
     return resolved
 
@@ -123,9 +123,9 @@ def build_executor_instructions(
         base_task.strip(),
         "",
         "## Required Behavior",
-        "- Make the minimum useful repository changes to address the critic feedback.",
+        "- Make the minimum useful repository changes to address the review feedback.",
         "- Prefer concrete fixes over explanation-only output.",
-        "- Assume a fresh critic pass will run after you finish.",
+        "- Assume a fresh review pass will run after you finish.",
         "- Do not spend effort on self-review prose inside the executor step.",
         "",
         "## Focus Areas",
@@ -135,11 +135,11 @@ def build_executor_instructions(
     else:
         lines.append("- none provided")
 
-    lines.extend(["", "## Previous Critic Review"])
+    lines.extend(["", "## Previous Review"])
     if not previous_review:
         lines.extend(
             [
-                "No previous critic review exists yet. This is the first executor round.",
+                "No previous review exists yet. This is the first executor round.",
                 "",
             ]
         )
@@ -150,7 +150,7 @@ def build_executor_instructions(
                 f"- Previous score: {previous_review.get('score')}",
                 f"- Previous summary: {str(previous_review.get('summary', '')).strip()}",
                 "",
-                "### Previous Critical Issues",
+                "### Previous Open Issues",
             ]
         )
         issues = previous_review.get("critical_issues") or []
@@ -174,7 +174,7 @@ def build_executor_instructions(
     return "\n".join(lines).rstrip() + "\n"
 
 
-def build_critic_task(
+def build_review_task(
     *,
     base_task: str,
     round_index: int,
@@ -197,11 +197,11 @@ def build_critic_task(
         lines.extend(
             [
                 "",
-                "Previous critic context:",
+                "Previous review context:",
                 f"- Previous decision: {previous_review.get('decision')}",
                 f"- Previous summary: {str(previous_review.get('summary', '')).strip()}",
                 "",
-                "Previously open critical issues:",
+                "Previously open issues:",
             ]
         )
         issues = previous_review.get("critical_issues") or []
@@ -331,7 +331,7 @@ def should_stop(decision: str | None, policy: str) -> bool:
 
 def render_loop_summary(summary: dict[str, Any]) -> str:
     lines = [
-        "# Agent Critic Loop Summary",
+        "# Agent Review Loop Summary",
         "",
         f"- Status: {summary.get('status')}",
         f"- Stop reason: {summary.get('stop_reason')}",
@@ -346,17 +346,17 @@ def render_loop_summary(summary: dict[str, Any]) -> str:
         lines.append("- none")
     else:
         for round_data in rounds:
-            critic = round_data.get("critic", {})
+            review = round_data.get("review", {})
             executor = round_data.get("executor", {})
             lines.append(
                 f"- Round {round_data.get('round_index')}: executor_rc={executor.get('returncode')} "
-                f"critic_status={critic.get('status')} decision={critic.get('decision')}"
+                f"review_status={review.get('status')} decision={review.get('decision')}"
             )
     lines.append("")
     return "\n".join(lines)
 
 
-def run_agent_critic_loop(
+def run_agent_review_loop(
     *,
     project_root: Path,
     cwd: Path,
@@ -370,7 +370,7 @@ def run_agent_critic_loop(
     max_diff_chars: int,
     max_file_chars: int,
     gemini_bin: str | None,
-    critic_backend: str,
+    review_backend: str,
     model: str | None,
     gemini_extra_args: list[str],
     max_rounds: int,
@@ -378,8 +378,8 @@ def run_agent_critic_loop(
     executor_command_text: str,
     executor_timeout_sec: int,
     executor_allow_nonzero: bool,
-    critic_timeout_sec: int,
-    critic_mock_response_files: list[Path],
+    review_timeout_sec: int,
+    review_mock_response_files: list[Path],
 ) -> dict[str, Any]:
     repo_root = resolve_repo_root(cwd)
     resolved_gemini_bin = resolve_gemini_binary(gemini_bin, cwd=cwd, repo_root=repo_root)
@@ -397,7 +397,7 @@ def run_agent_critic_loop(
         "max_diff_chars": max_diff_chars,
         "max_file_chars": max_file_chars,
         "gemini_bin": resolved_gemini_bin,
-        "critic_backend": critic_backend,
+        "review_backend": review_backend,
         "model": model,
         "gemini_extra_args": gemini_extra_args,
         "max_rounds": max_rounds,
@@ -405,8 +405,8 @@ def run_agent_critic_loop(
         "executor_command_text": executor_command_text,
         "executor_timeout_sec": executor_timeout_sec,
         "executor_allow_nonzero": executor_allow_nonzero,
-        "critic_timeout_sec": critic_timeout_sec,
-        "critic_mock_response_files": [str(path) for path in critic_mock_response_files],
+        "review_timeout_sec": review_timeout_sec,
+        "review_mock_response_files": [str(path) for path in review_mock_response_files],
     }
     write_json(output_dir / "loop_config.json", loop_config)
 
@@ -420,7 +420,7 @@ def run_agent_critic_loop(
         "output_dir": str(output_dir),
         "profile": profile,
         "gemini_bin": resolved_gemini_bin,
-        "critic_backend": critic_backend,
+        "review_backend": review_backend,
         "model": model,
         "git_diff_mode": git_diff_mode,
         "rounds": [],
@@ -433,9 +433,9 @@ def run_agent_critic_loop(
     for round_index in range(1, max_rounds + 1):
         round_dir = output_dir / f"round_{round_index:02d}"
         executor_dir = round_dir / "executor"
-        critic_dir = round_dir / "critic"
+        review_dir = round_dir / "review"
         executor_dir.mkdir(parents=True, exist_ok=True)
-        critic_dir.mkdir(parents=True, exist_ok=True)
+        review_dir.mkdir(parents=True, exist_ok=True)
 
         executor_instructions = build_executor_instructions(
             base_task=base_task,
@@ -467,15 +467,15 @@ def run_agent_critic_loop(
         env = os.environ.copy()
         env.update(
             {
-                "AGENT_CRITIC_LOOP_DIR": str(output_dir),
-                "AGENT_CRITIC_ROUND_DIR": str(round_dir),
-                "AGENT_CRITIC_ROUND_INDEX": str(round_index),
-                "AGENT_CRITIC_EXECUTOR_DIR": str(executor_dir),
-                "AGENT_CRITIC_CRITIC_DIR": str(critic_dir),
-                "AGENT_CRITIC_EXECUTOR_TASK_FILE": str(executor_task_file),
-                "AGENT_CRITIC_EXECUTOR_CONTEXT_FILE": str(executor_context_file),
-                "AGENT_CRITIC_PREVIOUS_REVIEW_JSON": "" if previous_review_json is None else str(previous_review_json),
-                "AGENT_CRITIC_PREVIOUS_REVIEW_MD": "" if previous_review_md is None else str(previous_review_md),
+                "AGENT_REVIEW_LOOP_DIR": str(output_dir),
+                "AGENT_REVIEW_ROUND_DIR": str(round_dir),
+                "AGENT_REVIEW_ROUND_INDEX": str(round_index),
+                "AGENT_REVIEW_EXECUTOR_DIR": str(executor_dir),
+                "AGENT_REVIEW_DIR": str(review_dir),
+                "AGENT_REVIEW_EXECUTOR_TASK_FILE": str(executor_task_file),
+                "AGENT_REVIEW_EXECUTOR_CONTEXT_FILE": str(executor_context_file),
+                "AGENT_REVIEW_PREVIOUS_JSON": "" if previous_review_json is None else str(previous_review_json),
+                "AGENT_REVIEW_PREVIOUS_MD": "" if previous_review_md is None else str(previous_review_md),
             }
         )
         format_vars = _FormatMap(
@@ -484,7 +484,7 @@ def run_agent_critic_loop(
                 "round_dir": str(round_dir),
                 "round_index": str(round_index),
                 "executor_dir": str(executor_dir),
-                "critic_dir": str(critic_dir),
+                "review_dir": str(review_dir),
                 "executor_task_file": str(executor_task_file),
                 "executor_context_file": str(executor_context_file),
                 "previous_review_json": "" if previous_review_json is None else str(previous_review_json),
@@ -528,10 +528,10 @@ def run_agent_critic_loop(
         }
 
         if executor_result.returncode != 0 and not executor_allow_nonzero:
-            round_summary["critic"] = {
+            round_summary["review"] = {
                 "status": "skipped",
                 "reason": "executor_failed",
-                "output_dir": str(critic_dir),
+                "output_dir": str(review_dir),
             }
             loop_summary["rounds"].append(round_summary)
             loop_summary["status"] = "failed"
@@ -542,22 +542,22 @@ def run_agent_critic_loop(
             write_text(output_dir / "loop_summary.md", render_loop_summary(loop_summary))
             return loop_summary
 
-        critic_task_text = build_critic_task(
+        review_task_text = build_review_task(
             base_task=base_task,
             round_index=round_index,
             max_rounds=max_rounds,
             previous_review=previous_review,
         )
-        critic_task_file = critic_dir / "critic_task.md"
-        write_text(critic_task_file, critic_task_text)
+        review_task_file = review_dir / "review_task.md"
+        write_text(review_task_file, review_task_text)
 
-        critic_command = [
+        review_command = [
             sys.executable,
-            str((project_root / "tools" / "run_gemini_critic.py").resolve()),
+            str((project_root / "tools" / "run_gemini_review.py").resolve()),
             "--profile",
             profile,
             "--task-file",
-            str(critic_task_file),
+            str(review_task_file),
             "--git-diff-mode",
             git_diff_mode,
             "--max-diff-chars",
@@ -567,90 +567,90 @@ def run_agent_critic_loop(
             "--cwd",
             str(cwd),
             "--output-dir",
-            str(critic_dir),
+            str(review_dir),
             "--backend",
-            critic_backend,
+            review_backend,
             "--gemini-bin",
             resolved_gemini_bin,
             "--timeout-sec",
-            str(critic_timeout_sec),
+            str(review_timeout_sec),
         ]
         if git_base_ref:
-            critic_command.extend(["--git-base-ref", git_base_ref])
+            review_command.extend(["--git-base-ref", git_base_ref])
         if model:
-            critic_command.extend(["--model", model])
+            review_command.extend(["--model", model])
         for item in focus:
-            critic_command.extend(["--focus", item])
+            review_command.extend(["--focus", item])
         for path in include_files:
-            critic_command.extend(["--include-file", str(path)])
+            review_command.extend(["--include-file", str(path)])
         for item in gemini_extra_args:
-            critic_command.extend(["--gemini-extra-arg", item])
-        mock_response = pick_mock_response(critic_mock_response_files, round_index)
+            review_command.extend(["--gemini-extra-arg", item])
+        mock_response = pick_mock_response(review_mock_response_files, round_index)
         if mock_response is not None:
-            critic_command.extend(["--mock-response-file", str(mock_response)])
+            review_command.extend(["--mock-response-file", str(mock_response)])
 
-        critic_result = run_command(
-            command=critic_command,
+        review_result = run_command(
+            command=review_command,
             cwd=cwd,
-            timeout_sec=critic_timeout_sec + 30,
+            timeout_sec=review_timeout_sec + 30,
         )
-        write_text(critic_dir / "loop_driver_stdout.txt", critic_result.stdout)
-        write_text(critic_dir / "loop_driver_stderr.txt", critic_result.stderr)
+        write_text(review_dir / "loop_driver_stdout.txt", review_result.stdout)
+        write_text(review_dir / "loop_driver_stderr.txt", review_result.stderr)
         write_json(
-            critic_dir / "loop_driver_metadata.json",
+            review_dir / "loop_driver_metadata.json",
             {
-                "command": critic_result.command,
-                "command_text": critic_result.command_text,
-                "returncode": critic_result.returncode,
-                "duration_sec": critic_result.duration_sec,
-                "timed_out": critic_result.timed_out,
+                "command": review_result.command,
+                "command_text": review_result.command_text,
+                "returncode": review_result.returncode,
+                "duration_sec": review_result.duration_sec,
+                "timed_out": review_result.timed_out,
             },
         )
 
-        critic_summary: dict[str, Any] = {
-            "status": "success" if critic_result.returncode == 0 else "failed",
-            "returncode": critic_result.returncode,
-            "duration_sec": critic_result.duration_sec,
-            "timed_out": critic_result.timed_out,
-            "output_dir": str(critic_dir),
+        review_summary: dict[str, Any] = {
+            "status": "success" if review_result.returncode == 0 else "failed",
+            "returncode": review_result.returncode,
+            "duration_sec": review_result.duration_sec,
+            "timed_out": review_result.timed_out,
+            "output_dir": str(review_dir),
             "decision": None,
             "score": None,
             "issues": None,
         }
 
-        review_json_path = critic_dir / "critic_review.json"
+        review_json_path = review_dir / "review.json"
         if review_json_path.exists():
             review_payload = json.loads(review_json_path.read_text(encoding="utf-8"))
             previous_review = review_payload
             previous_review_json = review_json_path
-            previous_review_md = critic_dir / "critic_review.md"
-            critic_summary["decision"] = review_payload.get("decision")
-            critic_summary["score"] = review_payload.get("score")
-            critic_summary["issues"] = len(review_payload.get("critical_issues") or [])
+            previous_review_md = review_dir / "review.md"
+            review_summary["decision"] = review_payload.get("decision")
+            review_summary["score"] = review_payload.get("score")
+            review_summary["issues"] = len(review_payload.get("critical_issues") or [])
         else:
             previous_review = None
             previous_review_json = None
             previous_review_md = None
-            metadata_path = critic_dir / "run_metadata.json"
+            metadata_path = review_dir / "run_metadata.json"
             if metadata_path.exists():
                 metadata_payload = json.loads(metadata_path.read_text(encoding="utf-8"))
-                critic_summary["error"] = metadata_payload.get("error")
+                review_summary["error"] = metadata_payload.get("error")
 
-        round_summary["critic"] = critic_summary
+        round_summary["review"] = review_summary
         loop_summary["rounds"].append(round_summary)
         loop_summary["completed_rounds"] = round_index
 
-        if critic_result.returncode != 0:
+        if review_result.returncode != 0:
             loop_summary["status"] = "failed"
-            loop_summary["stop_reason"] = "critic_failed"
+            loop_summary["stop_reason"] = "review_failed"
             write_json(round_dir / "round_summary.json", round_summary)
             write_json(output_dir / "loop_summary.json", loop_summary)
             write_text(output_dir / "loop_summary.md", render_loop_summary(loop_summary))
             return loop_summary
 
-        if should_stop(str(critic_summary.get("decision")), stop_on_decision):
+        if should_stop(str(review_summary.get("decision")), stop_on_decision):
             loop_summary["status"] = "completed"
-            loop_summary["stop_reason"] = f"decision:{critic_summary.get('decision')}"
+            loop_summary["stop_reason"] = f"decision:{review_summary.get('decision')}"
             write_json(round_dir / "round_summary.json", round_summary)
             write_json(output_dir / "loop_summary.json", loop_summary)
             write_text(output_dir / "loop_summary.md", render_loop_summary(loop_summary))
