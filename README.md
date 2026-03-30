@@ -183,7 +183,7 @@ See [full setup guide](#%EF%B8%8F-setup) for details and [alternative model comb
 - 📝 **Paper writing** — narrative → outline → figures → LaTeX → PDF → auto-review (4/10 → 8.5/10), one command. Anti-hallucination citations via [DBLP](https://dblp.org)/[CrossRef](https://www.crossref.org)
 - 🤖 **Cross-model collaboration** — Claude Code executes, GPT-5.4 xhigh reviews. Adversarial, not self-play
 - 📝 **Peer review** — review others' papers as a conference reviewer, with structured scoring and meta-review
-- 🖥️ **Review-driven experiments** — when GPT-5.4 says "run an ablation", Claude Code automatically writes the script, rsyncs to your GPU server, launches in screen, collects results, and folds them back into the paper. Just configure your server in `CLAUDE.md` ([setup guide](#%EF%B8%8F-gpu-server-setup-for-auto-experiments))
+- 🖥️ **Review-driven experiments** — when GPT-5.4 says "run an ablation", Claude Code automatically writes the script, rsyncs to your GPU server, launches in screen, collects results, and folds them back into the paper. Just configure your server in `CLAUDE.md` ([setup guide](#%EF%B8%8F-gpu-server-setup-for-auto-experiments)). **No GPU?** Use `gpu: vast` to rent one from [Vast.ai](https://vast.ai) on demand
 - 🔀 **Flexible models** — default Claude × GPT-5.4, also supports [GLM, MiniMax, Kimi, LongCat, DeepSeek, etc.](#-alternative-model-combinations) — no Claude or OpenAI API required
 - 🛑 **Human-in-the-loop** — configurable checkpoints at key decisions. `AUTO_PROCEED=true` for full autopilot, `false` to approve each step
 - 📱 **[Feishu/Lark notifications](#-feishulark-integration-optional)** — three modes: **off (default, strongly recommended for most users)**, push-only (webhook, mobile alerts), interactive (approve/reject from Feishu). Zero impact when unconfigured
@@ -458,7 +458,7 @@ Already have an experiment plan (from Workflow 1 or your own)? `/experiment-brid
 │   /novelty-check — verify idea isn't already published       │
 │                                                              │
 │   Supporting skills:                                         │
-│   /run-experiment    — deploy to local/remote GPU            │
+│   /run-experiment    — deploy to local/remote/vast.ai GPU     │
 │   /analyze-results   — interpret experiment outputs          │
 │   /monitor-experiment — check progress, collect results      │
 └─────────────────────────────────────────────────────────────┘
@@ -682,8 +682,9 @@ Got reviews back? `/rebuttal` parses them, builds a strategy, and drafts a venue
 | Skill | Description | Codex MCP? |
 |-------|-------------|:---:|
 | 🔗 **[`experiment-bridge`](skills/experiment-bridge/SKILL.md)** | Read experiment plan → implement code → sanity check → deploy to GPU → collect initial results | No |
-| ├ 🚀 [`run-experiment`](skills/run-experiment/SKILL.md) | Deploy experiments to local (MPS/CUDA) or remote GPU servers | No |
-| └ 👀 [`monitor-experiment`](skills/monitor-experiment/SKILL.md) | Monitor running experiments, check progress, collect results | No |
+| ├ 🚀 [`run-experiment`](skills/run-experiment/SKILL.md) | Deploy experiments to local, remote, or [Vast.ai](https://vast.ai) GPU (`gpu: local/remote/vast`) | No |
+| ├ 👀 [`monitor-experiment`](skills/monitor-experiment/SKILL.md) | Monitor running experiments, check progress, collect results | No |
+| └ ☁️ [`vast-gpu`](skills/vast-gpu/SKILL.md) | Rent, manage, and destroy on-demand GPU instances from [Vast.ai](https://vast.ai) | No |
 
 ### 🔁 Workflow 2: Auto Research Loop
 
@@ -692,7 +693,7 @@ Got reviews back? `/rebuttal` parses them, builds a strategy, and drafts a venue
 | 🔁 **[`auto-review-loop`](skills/auto-review-loop/SKILL.md)** | **Pipeline orchestrator** — autonomous review→fix→re-review (max 4 rounds) | Yes |
 | ├ 🔬 [`research-review`](skills/research-review/SKILL.md) | Deep review from external LLM (shared with Workflow 1) | Yes |
 | ├ 🔍 [`novelty-check`](skills/novelty-check/SKILL.md) | Verify novelty when reviewer suggests new directions | Yes |
-| ├ 🚀 [`run-experiment`](skills/run-experiment/SKILL.md) | Deploy experiments to local (MPS/CUDA) or remote GPU servers | No |
+| ├ 🚀 [`run-experiment`](skills/run-experiment/SKILL.md) | Deploy experiments to local, remote, or [Vast.ai](https://vast.ai) GPU (`gpu: local/remote/vast`) | No |
 | ├ 📊 [`analyze-results`](skills/analyze-results/SKILL.md) | Analyze experiment results, compute statistics, generate insights | No |
 | └ 👀 [`monitor-experiment`](skills/monitor-experiment/SKILL.md) | Monitor running experiments, check progress, collect results | No |
 | 🔁 [`auto-review-loop-llm`](skills/auto-review-loop-llm/SKILL.md) | Same as above, but uses any OpenAI-compatible API via [`llm-chat`](mcp-servers/llm-chat/) MCP server | No |
@@ -834,11 +835,13 @@ To run the auto-review loop without clicking permission prompts, add to `.claude
 
 When GPT-5.4 says "run an ablation study" or "add a baseline comparison", Claude Code automatically writes the experiment script and deploys it to your GPU server. For this to work, Claude Code needs to know your server environment.
 
-Add your server info to your project's `CLAUDE.md`:
+Three GPU modes are supported — pick one and add it to your project's `CLAUDE.md`:
+
+#### Option A: Remote SSH Server (`gpu: remote`)
 
 ```markdown
 ## Remote Server
-
+- gpu: remote
 - SSH: `ssh my-gpu-server` (key-based auth, no password)
 - GPU: 4x A100
 - Conda env: `research` (Python 3.10 + PyTorch)
@@ -849,10 +852,12 @@ Add your server info to your project's `CLAUDE.md`:
 
 Claude Code reads this and knows how to SSH in, activate the environment, and launch experiments. GPT-5.4 (the reviewer) only decides **what** experiments to run — Claude Code figures out **how** based on your `CLAUDE.md`.
 
+#### Option B: Local GPU (`gpu: local`)
+
 If you are already on the GPU server, you can add the following to your `CLAUDE.md`:
 ```markdown
 ## GPU Environment
-
+- gpu: local
 - This machine has direct GPU access (no SSH needed)
 - GPU: 4x A100 80GB
 - Experiment environment: `YOUR_CONDA_ENV` (Python 3.x + PyTorch)
@@ -860,7 +865,56 @@ If you are already on the GPU server, you can add the following to your `CLAUDE.
 - Code directory: `/home/YOUR_USERNAME/YOUR_CODE_DIRECTORY/`
 ```
 
-**No server?** The review and rewriting skills still work without GPU access. Only experiment-related fixes will be skipped (flagged for manual follow-up).
+#### Option C: Vast.ai On-Demand GPU (`gpu: vast`)
+
+No GPU? Rent one from [Vast.ai](https://vast.ai) on demand. ARIS **analyzes your training task** (model size, dataset, estimated time), searches for the cheapest GPU that fits, and presents options with **estimated total cost** — not just $/hr. After you pick, it handles everything: rent → setup → run → collect results → destroy.
+
+**Prerequisites:**
+
+1. **Create a Vast.ai account** at https://cloud.vast.ai/ and add billing (credit card or crypto)
+
+2. **Install the `vastai` CLI** (requires **Python ≥ 3.10**):
+   ```bash
+   pip install vastai
+   ```
+   If your Python is older (check with `python --version`), use a virtual environment with Python ≥ 3.10 (e.g., `conda create`, `pyenv`, `uv venv`, etc.).
+
+3. **Set your API key** — get it from https://cloud.vast.ai/cli/:
+   ```bash
+   vastai set api-key YOUR_API_KEY
+   ```
+
+4. **Upload your SSH public key** at https://cloud.vast.ai/manage-keys/ — this is **required before renting any instance** (keys are baked in at creation time). If you don't have one:
+   ```bash
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   cat ~/.ssh/id_ed25519.pub   # copy this to Vast.ai
+   ```
+
+5. **Verify setup** — test that search works:
+   ```bash
+   vastai search offers 'gpu_ram>=24 reliability>0.95' -o 'dph+' --limit 3
+   ```
+
+**Add to `CLAUDE.md`:**
+```markdown
+## Vast.ai
+- gpu: vast                  # rent on-demand GPU from vast.ai
+- auto_destroy: true         # auto-destroy after experiment completes (default)
+- max_budget: 5.00           # optional: warn if estimated cost exceeds this
+```
+
+That's it — no GPU model or hardware config needed. When you run `/run-experiment`, ARIS reads your experiment scripts/plan, estimates VRAM and training time, and presents options like:
+
+```
+| # | GPU       | VRAM  | $/hr  | Est. Hours | Est. Total | Offer ID |
+|---|-----------|-------|-------|------------|------------|----------|
+| 1 | RTX 4090  | 24 GB | $0.28 | ~4h        | ~$1.12     | 6995713  |  ← best value
+| 2 | A100 SXM  | 80 GB | $0.95 | ~2h        | ~$1.90     | 7023456  |  ← fastest
+```
+
+Pick a number and it handles the rest. Use `/vast-gpu` directly for manual control.
+
+**No server at all?** The review and rewriting skills still work without GPU access. Only experiment-related fixes will be skipped (flagged for manual follow-up).
 
 </details>
 
@@ -1127,6 +1181,7 @@ Now skills will:
 | `/auto-review-loop` | Review scored (each round), loop complete | Score + verdict | + wait for continue/stop |
 | `/auto-paper-improvement-loop` | Review scored, all rounds done | Score progression | Score progression |
 | `/run-experiment` | Experiments deployed | GPU assignment + ETA | GPU assignment + ETA |
+| `/vast-gpu` | Instance rented/destroyed | Instance ID + cost | Instance ID + cost |
 | `/monitor-experiment` | Results collected | Results table | Results table |
 | `/idea-discovery` | Phase transitions, final report | Summary at each phase | + approve/reject at checkpoints |
 | `/research-pipeline` | Stage transitions, pipeline done | Stage summary | + approve/reject |
