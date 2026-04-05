@@ -1227,7 +1227,6 @@ claude
     author       = {Yang, Ruofeng and Li, Yongcan and Li, Shuai},
     title        = {ARIS: Fully Autonomous Research via Adversarial Multi-Agent Collaboration},
     year         = {2026},
-    doi          = {10.5281/zenodo.19415257},
     url          = {https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep},
 }
 ```
