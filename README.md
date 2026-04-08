@@ -4,7 +4,7 @@
 
 🔥 [**ARIS-Code CLI — 独立安装版**](docs/ARIS-Code-README_CN.md) · [English](docs/ARIS-Code-README_EN.md) | [⬇️ Download](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/releases/latest)
 
-> 📰 **ARIS-Code v0.3.5** (2026-04-08) — Research Wiki | Meta-Optimize | Atomic sessions | Bash safety | Windows (experimental)
+> 📰 **ARIS-Code v0.3.6** (2026-04-08) — Research Wiki | Meta-Optimize | Atomic sessions | Bash safety | Windows (experimental)
 >
 > <details><summary>Previous versions</summary>
 >
