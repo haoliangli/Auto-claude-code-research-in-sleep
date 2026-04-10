@@ -179,10 +179,10 @@ if grep -q "training_status:.*running" "$PROJECT_DIR/CLAUDE.md" 2>/dev/null; the
 fi
 
 # 4. Check for REVIEW_STATE.json (auto-review-loop recovery)
-if [ -f "$PROJECT_DIR/REVIEW_STATE.json" ]; then
-  RS_STATUS=$(python3 -c "import json; d=json.load(open('$PROJECT_DIR/REVIEW_STATE.json')); print(d.get('status',''))" 2>/dev/null)
+if [ -f "$PROJECT_DIR/review-stage/REVIEW_STATE.json" ]; then
+  RS_STATUS=$(python3 -c "import json; d=json.load(open('$PROJECT_DIR/review-stage/REVIEW_STATE.json')); print(d.get('status',''))" 2>/dev/null)
   if [ "$RS_STATUS" = "in_progress" ]; then
-    OUTPUT="$OUTPUT\n\n[session-restore] REVIEW_STATE.json found (in_progress) — auto-review-loop can resume."
+    OUTPUT="$OUTPUT\n\n[session-restore] review-stage/REVIEW_STATE.json found (in_progress) — auto-review-loop can resume."
   fi
 fi
 

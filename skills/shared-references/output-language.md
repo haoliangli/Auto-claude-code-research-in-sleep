@@ -31,6 +31,10 @@ Determine the output language using this priority:
 | /analyze-results | Full | Result analysis follows language setting |
 | /auto-review-loop | Partial | AUTO_REVIEW.md follows setting; reviewer prompts stay English |
 | /experiment-plan | Full | EXPERIMENT_PLAN.md follows setting |
+| /experiment-bridge | Full | EXPERIMENT_RESULTS.md follows setting |
+| /research-refine | Full | FINAL_PROPOSAL.md follows setting |
+| /research-refine-pipeline | Full | PIPELINE_SUMMARY.md follows setting |
+| /research-pipeline | Full | Inherits from sub-skills |
 | /result-to-claim | Full | Claim descriptions follow setting |
 | /paper-writing | Skip | Always English LaTeX for submission |
 | /paper-write | Skip | Always English LaTeX |

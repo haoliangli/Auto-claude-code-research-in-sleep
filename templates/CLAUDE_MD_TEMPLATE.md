@@ -4,7 +4,7 @@
 
 ```yaml
 stage: idle          # idle | idea-discovery | implementation | training | review | paper
-active_idea: ""      # Current idea title (one line)
+idea: ""             # Current idea title (one line)
 contract: ""         # Path to research_contract.md (e.g., idea-stage/docs/research_contract.md)
 current_branch: ""   # Git branch for this idea
 baseline: ""         # Baseline numbers for comparison
