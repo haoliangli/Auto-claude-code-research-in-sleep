@@ -20,6 +20,29 @@ __pycache__/
 # Claude Code local config — contains API keys and personal settings
 .claude/
 
+# Research artifacts — tracked on local/* branches, never on main
+RESEARCH_BRIEF.md
+RESEARCH_CONTRACT.md
+IDEA_REPORT.md
+IDEA_CANDIDATES.md
+AUTO_REVIEW.md
+EXPERIMENT_LOG.md
+CURRENT_ROUND.md
+REVIEW_STATE.json
+NARRATIVE_REPORT.md
+PROOF_AUDIT.md
+PROOF_PACKAGE.md
+findings.md
+refine-logs/
+local/
+
+# Project management files — tracked on local/* branches only
+AGENTS.md
+CLAUDE.md
+DECISIONS.md
+STATUS.md
+NEXT.md
+
 # Patent output — contains confidential invention details, do not commit
 patent/
 # Allow patent framework files (skills, templates, shared references)
