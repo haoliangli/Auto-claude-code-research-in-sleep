@@ -1,8 +1,8 @@
 ---
 name: alphaxiv
-description: Quick single-paper lookup via AlphaXiv LLM-optimized summaries with tiered source fallback. Use when user says "explain this paper", "summarize paper", pastes an arXiv/AlphaXiv URL, or provides a bare arXiv ID for quick understanding — not for broad literature search.
+description: Quick single-paper lookup via AlphaXiv LLM-optimized summaries with tiered source fallback. Use when user says "explain this paper", "summarize paper", pastes an arXiv/AlphaXiv URL, or provides a bare arXiv ID for quick understanding - not for broad literature search.
 argument-hint: [arxiv-id-or-url]
-allowed-tools: Bash(curl *), Bash(tar *), Bash(find *), Read, Write, WebFetch, Glob
+allowed-tools: Bash(*), Read, Write, WebFetch, Glob
 ---
 
 # AlphaXiv Paper Lookup
@@ -33,8 +33,8 @@ This skill is the **quick single-paper reader** that returns LLM-optimized summa
 > Overrides (append to arguments):
 > - `/alphaxiv 2401.12345` — quick overview
 > - `/alphaxiv "https://arxiv.org/abs/2401.12345"` — auto-extract ID
-> - `/alphaxiv 2401.12345 — depth: src` — force LaTeX source inspection
-> - `/alphaxiv 2401.12345 — depth: abs` — force full markdown
+> - `/alphaxiv 2401.12345 - depth: src` — force LaTeX source inspection
+> - `/alphaxiv 2401.12345 - depth: abs` — force full markdown
 
 ## Workflow
 
@@ -51,7 +51,7 @@ Parse `$ARGUMENTS` to extract a bare arXiv paper ID. Accept these input formats:
 Strip version suffixes (`v1`, `v2`, ...) for API calls. Store as `PAPER_ID`.
 
 Parse optional directives:
-- **`— depth: overview|abs|src`**: force a specific tier instead of cascading
+- **`- depth: overview|abs|src`**: force a specific tier instead of cascading
 
 ### Step 2: Fetch AlphaXiv Overview (Tier 1 — Fastest)
 
@@ -117,8 +117,8 @@ If the user only asks for one specific detail, answer it directly — skip the f
 #### Suggest Follow-Up Skills
 
 ```text
-/arxiv "PAPER_ID" — download         - download the PDF to local library
-/deepxiv "PAPER_ID" — section: Methods  - read a specific section progressively
+/arxiv "PAPER_ID" - download          - download the PDF to local library
+/deepxiv "PAPER_ID" - section: Methods  - read a specific section progressively
 /research-lit "related topic"        - multi-source literature survey
 /novelty-check "idea from paper"     - verify novelty against this paper's area
 ```
